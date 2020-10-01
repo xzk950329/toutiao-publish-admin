@@ -1,15 +1,18 @@
 <template>
   <div class="login-container">
-    <el-form class="login-form" ref="form" :model="user">
+    <el-form class="login-form" ref="login-form" :model="user" :rules="formRules">
+      <!--
+        配置表单验证
+      -->
       <div class="login-head"></div>
-      <el-form-item>
+      <el-form-item prop="mobile">
         <el-input v-model="user.mobile" placeholder="请输入手机号"></el-input>
       </el-form-item>
-      <el-form-item>
+      <el-form-item prop="code">
         <el-input v-model="user.code" placeholder="请输入验证码"></el-input>
       </el-form-item>
-       <el-form-item>
-          <el-checkbox v-model="checked">我已阅读并同意用户协议和隐私条款</el-checkbox>
+       <el-form-item  prop="agree">
+          <el-checkbox v-model="user.agree">我已阅读并同意用户协议和隐私条款</el-checkbox>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onLogin" class="login-btn" :loading="loginLoading">登录</el-button>
@@ -19,31 +22,50 @@
 </template>
 
 <script>
-import request from '@/utils/request'
+import { login } from '@/api/user'
+// import request from '@/utils/request'
 export default {
   name: 'Login',
   data () {
     return {
       user: {
         mobile: '', // 手机号
-        code: '' // 验证码
+        code: '', // 验证码
+        agree: false // 是否同意协议
       },
-      checked: false, // 协议选中状态
-      loginLoading: false // 登录到loading状态
+      loginLoading: false, // 登录到loading状态
+      formRules: { // 表单验证规则
+        mobile: [
+          { required: true, message: '请输入手机号', trigger: 'blur' },
+          { pattern: /^1[3|5|7|8|9]\d{9}$/, message: '请输入正确手机号', trigger: 'blur' }
+        ],
+        code: [
+          { required: true, message: '请输入验证码', trigger: 'blur' },
+          { pattern: /^\d{6}$/, message: '请输入正确手机号', trigger: 'blur' }
+        ],
+        agree: [
+          {
+            // 自定义校验规则
+            // 验证通过：callback（）
+            // 验证失败：callback（new Error（'错误消息'））
+            validator (rule, value, callback) {
+              if (value) {
+                callback()
+              } else {
+                callback(new Error('请同意用户协议'))
+              }
+            },
+            trigger: 'change'
+          }
+        ]
+      }
     }
   },
   methods: {
-    onLogin () {
-      const user = this.user
-      // 表单验证
+    login () {
       // 验证通过，提交登录
       this.loginLoading = true
-      request({
-        method: 'POST',
-        url: '/mp/v1_0/authorizations',
-        // data 设置POST请求体
-        data: user
-      }).then(res => {
+      login(this.user).then(res => {
         this.$message({
           showClose: true,
           message: '登录成功',
@@ -51,15 +73,31 @@ export default {
         })
         // 关闭loading
         this.loginLoading = false
+        // 跳转首页
+        this.$router.push({
+          name: 'home'
+        })
       }).catch(err => {
         console.log(err)
         this.$message.error('登陆失败，手机号或验证码错误')
         // 关闭loading
         this.loginLoading = false
       })
+    },
+    onLogin () {
+      // 表单验证 validate 方法是异步的
+      this.$refs['login-form'].validate(valid => {
+        if (!valid) { // 验证不通过
+          return
+        }
+        // 验证通过 请求登录
+        this.login()
+      })
     }
   }
+
 }
+
 </script>
 
 <style lang="less" scoped>
