@@ -73,6 +73,8 @@ export default {
         })
         // 关闭loading
         this.loginLoading = false
+        // 将接口返回的用户数据放到本地存储，方便应用数据共享,本地存储稚嫩存储字符串
+        window.localStorage.setItem('user', JSON.stringify(res.data.data))
         // 跳转首页
         this.$router.push({
           name: 'home'

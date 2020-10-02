@@ -1,12 +1,15 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px" class="aside">
-      <Aside class="aside-menu"/>
+    <el-aside class="aside" width="auto">
+      <Aside class="aside-menu" :isCollapse="isCollapse"/>
     </el-aside>
     <el-container>
       <el-header class="header-cotainer">
         <div class="header-left">
-          <i class="el-icon-s-fold"></i>
+          <i
+          :class="isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold'"
+          @click="changeIsCollapse"
+          ></i>
           <span>北京字节跳动有限公司</span>
         </div>
         <el-dropdown>
@@ -20,7 +23,7 @@
           </span> -->
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item>设置</el-dropdown-item>
-            <el-dropdown-item>退出</el-dropdown-item>
+            <el-dropdown-item @click.native="onLogout">退出</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </el-header>
@@ -38,7 +41,8 @@ export default {
   name: 'LayoutIndex',
   data () {
     return {
-      user: {} // 当前登录用户信息
+      user: {}, // 当前登录用户信息
+      isCollapse: false
     }
   },
 
@@ -56,6 +60,29 @@ export default {
       getUserProfile().then(res => {
         this.user = res.data.data
       })
+    },
+
+    changeIsCollapse () {
+      this.isCollapse = !this.isCollapse
+    },
+
+    onLogout () {
+      // 把用户的登录状态清除
+      this.$confirm('确定退出吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        window.localStorage.removeItem('user')
+        this.$router.push('/login')
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消退出'
+        })
+      })
+      // window.localStorage.removeItem('user')
+      // this.$router.push('/login')
     }
   }
 }
@@ -81,7 +108,7 @@ export default {
   align-items: center;
   border-bottom: 1px solid #cccccc;
   .header-left {
-    font-size: 14px;
+    font-size: 20px;
   }
   .avatar-wrap {
     display: flex;
