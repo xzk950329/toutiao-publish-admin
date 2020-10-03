@@ -1,8 +1,17 @@
 import axios from 'axios'
+import JSONbig from 'json-bigint'
 
 // axios 实例
 const request = axios.create({
-  baseURL: 'http://ttapi.research.itcast.cn/'
+  baseURL: 'http://ttapi.research.itcast.cn/',
+  // 定制后端返回的数据的原始处理，参数为未经处理的json字符串
+  transformResponse: [function (data) {
+    try {
+      return JSONbig.parse(data)
+    } catch (error) {
+      return data
+    }
+  }]
 })
 
 // 请求拦截器

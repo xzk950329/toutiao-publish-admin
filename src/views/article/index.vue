@@ -82,11 +82,12 @@
       </el-table-column>
       <el-table-column prop="pubdate" label="发布时间"> </el-table-column>
       <el-table-column label="操作">
-        <template>
+        <template slot-scope="scope">
             <el-button
             icon="el-icon-edit"
             circle
             type="primary"
+            @click="$router.push('/publish?id=' + scope.row.id)"
             size="mini">
             </el-button>
             <el-button
@@ -94,16 +95,19 @@
             icon="el-icon-delete"
             circle
             type="danger"
+            @click="onDeleteArticle(scope.row.id)"
            ></el-button>
         </template>
       </el-table-column>
     </el-table>
     <!-- 分页器 -->
     <el-pagination
+    class="page"
     layout="prev, pager, next"
     background :total="totalCount"
     @current-change="onCurrentChange"
     :page-size="pageSize"
+    :current-page.sync="page"
     :disabled="isDisable">
     </el-pagination>
     </el-card>
@@ -111,7 +115,7 @@
 </template>
 
 <script>
-import { getArticle, getArticleChannel } from '@/api/article'
+import { getArticle, getArticleChannel, deleteArticle } from '@/api/article'
 export default {
   name: 'Article',
   data () {
@@ -135,6 +139,7 @@ export default {
       rangeDate: [], // 筛选时间范围日期
       loading: true, // 表格数据加载中
       isDisable: false, // 页面加载时期禁用分页器
+      page: 1, // 删除文章时需要获取的页码
       atticleStatus: [
         { status: 0, text: '草稿', type: 'info' },
         { status: 1, text: '待审核', type: '' },
@@ -176,6 +181,24 @@ export default {
       this.loading = true
       this.isDisable = true
       this.loadArticle(page)
+    },
+    // 删除文章
+    onDeleteArticle (articleId) {
+      this.$confirm('确定删除吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteArticle(articleId.toString()).then(res => {
+          // 删除成功 更新文章列表
+          this.loadArticle(this.page)
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
     }
   }
 }
@@ -191,5 +214,8 @@ export default {
 .article-cover{
  width: 60px;
  background-size: cover
+}
+.page {
+  margin-right: 0px;
 }
 </style>
