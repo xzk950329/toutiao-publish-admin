@@ -8,12 +8,18 @@
           <el-breadcrumb-item>{{$route.query.id ? '修改' : '发布'}}文章</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
-      <el-form ref="form" :model="article" label-width="50px">
-        <el-form-item label="标题">
+      <el-form ref="publish-form" :model="article" label-width="60px" :rules="formRules">
+        <el-form-item label="标题" prop="title">
           <el-input v-model="article.title"></el-input>
         </el-form-item>
-         <el-form-item label="内容">
-          <el-input type="textarea" v-model="article.content"></el-input>
+         <el-form-item label="内容" prop="content">
+           <!-- 富文本编辑 -->
+           <el-tiptap
+           v-model="article.content"
+           :extensions="extensions"
+           height="350"
+           placeholder="请输入文章内容"
+           />
         </el-form-item>
         <el-form-item label="封面">
           <el-radio-group v-model="article.cover.type">
@@ -23,7 +29,7 @@
             <el-radio :label="-1">自动</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="频道">
+        <el-form-item label="频道" prop="channel_id">
           <el-select placeholder="请选择频道" v-model="article.channel_id">
             <el-option
             :label="channel.name"
@@ -43,7 +49,29 @@
 </template>
 
 <script>
+import {
+  // 需要的 extensions
+  Doc,
+  Text,
+  Paragraph,
+  Heading,
+  Bold,
+  Underline,
+  Italic,
+  Strike,
+  ListItem,
+  BulletList,
+  OrderedList,
+  TodoItem,
+  TodoList,
+  HorizontalRule,
+  Fullscreen,
+  Preview,
+  Image,
+  TextColor
+} from 'element-tiptap'
 import { getArticleChannel, addArticle, getOneArticle, updateArticle } from '@/api/article'
+import { uploadImage } from '@/api/image'
 export default {
   name: 'Publish',
   data () {
@@ -57,6 +85,60 @@ export default {
           images: [] // 封面图片地址
         },
         channel_id: null
+      },
+      extensions: [
+        new Doc(),
+        new Text(),
+        new Paragraph(),
+        new Heading({ level: 5 }),
+        new Bold({ bubble: true }), // 在气泡菜单中渲染菜单按钮
+        new Underline({ bubble: true, menubar: false }), // 在气泡菜单而不在菜单栏中渲染菜单按钮
+        new Italic(),
+        new Strike(),
+        new ListItem(),
+        new BulletList(),
+        new OrderedList(),
+        new TodoItem(),
+        new TodoList(),
+        new HorizontalRule(),
+        new Fullscreen(),
+        new Preview(),
+        new Image({
+          // 自定义图片
+          uploadRequest (file) {
+            const fd = new FormData()
+            fd.append('image', file)
+            // 第一个return 是返回promise对象
+            return uploadImage(fd).then(res => {
+              // 返回最后的结果
+              return res.data.data.url
+            })
+          }
+        }),
+        new TextColor()
+      ],
+      formRules: {
+        title: [
+          { required: true, message: '请输入文章标题', trigger: 'blur' },
+          { min: 5, max: 30, message: '长度在 5 到 30 个字符', trigger: 'blur' }
+        ],
+        content: [
+          {
+            validator (rule, value, callback) {
+              if (value === '<p></p>') {
+                // 验证失败
+                callback(new Error('请输入文章内容'))
+              } else {
+                // 验证通过
+                callback()
+              }
+            }
+          },
+          { required: true, message: '请输入文章内容', trigger: 'blur' }
+        ],
+        channel_id: [
+          { required: true, message: '请选择文章频道' }
+        ]
       }
     }
   },
@@ -71,23 +153,30 @@ export default {
 
   methods: {
     onPublish (draf) {
-      const articleId = this.$route.query.id
-      if (articleId) {
-        // 执行修改操作
-        updateArticle(articleId, this.article, draf = false)
-        this.$message({
-          message: '修改成功',
-          type: 'success'
-        })
-        this.$router.push('/article')
-      } else {
-        addArticle(this.article, draf).then(res => {
+      // 得到验证结果
+      this.$refs['publish-form'].validate(valid => {
+        if (!valid) {
+          return
+        }
+        // 验证通过 提交表单
+        const articleId = this.$route.query.id
+        if (articleId) {
+          // 执行修改操作
+          updateArticle(articleId, this.article, draf = false)
           this.$message({
-            message: '发布成功',
+            message: '修改成功',
             type: 'success'
           })
-        })
-      }
+          this.$router.push('/article')
+        } else {
+          addArticle(this.article, draf).then(res => {
+            this.$message({
+              message: '发布成功',
+              type: 'success'
+            })
+          })
+        }
+      })
     },
 
     loadChannels () {
