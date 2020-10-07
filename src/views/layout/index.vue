@@ -37,6 +37,7 @@
 <script>
 import Aside from './components/aside'
 import { getUserProfile } from '@/api/user'
+import globalBus from '@/utils/global-bus'
 export default {
   name: 'LayoutIndex',
   data () {
@@ -53,6 +54,11 @@ export default {
   created () {
     // 初始化组件后请求初始化资料
     this.loadUserProfile()
+    // 注册自定义事件
+    globalBus.$on('update-user', (data) => {
+      this.user.name = data.name
+      this.user.photo = data.photo
+    })
   },
 
   methods: {

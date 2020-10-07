@@ -19,7 +19,21 @@ export const getUserProfile = () => {
     url: '/mp/v1_0/user/profile'
   })
 }
-// 修改用户信息
-export const updataUser = () => {
 
+// 修改用户头像,data必须传递formData对象
+export const updataUserPhoto = data => {
+  return request({
+    method: 'PATCH',
+    url: '/mp/v1_0/user/photo',
+    data
+  })
+}
+
+// 修改用户基本信息
+export const updataUserProfile = data => {
+  return request({
+    method: 'PATCH',
+    url: '/mp/v1_0/user/profile',
+    data
+  })
 }
